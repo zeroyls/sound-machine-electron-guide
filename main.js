@@ -1,13 +1,10 @@
 'use strict';
 
-var app = require('app');
-var BrowserWindow = require('browser-window');
-var globalShortcut = require('global-shortcut');
-var configuration = require('./configuration');
-var ipc = require('ipc');
+const {app, BrowserWindow, globalShortcut, ipcMain}  = require('electron');
+const configuration = require('./configuration');
 
-var mainWindow = null;
-var settingsWindow = null;
+let mainWindow = null;
+let settingsWindow = null;
 
 app.on('ready', function() {
     if (!configuration.readSettings('shortcutKeys')) {
@@ -16,12 +13,18 @@ app.on('ready', function() {
 
     mainWindow = new BrowserWindow({
         frame: false,
-        height: 700,
+        height: 740,
         resizable: false,
-        width: 368
+        width: 368,
+        webPreferences: {
+            nodeIntegration: true
+        }
     });
 
-    mainWindow.loadUrl('file://' + __dirname + '/app/index.html');
+    // Open the DevTools.
+    // mainWindow.webContents.openDevTools();
+
+    mainWindow.loadFile('./app/index.html');
 
     setGlobalShortcuts();
 });
@@ -40,11 +43,12 @@ function setGlobalShortcuts() {
     });
 }
 
-ipc.on('close-main-window', function () {
+ipcMain.on('close-main-window', function () {
     app.quit();
 });
 
-ipc.on('open-settings-window', function () {
+ipcMain.on('open-settings-window', function () {
+    console.log("get open sett")
     if (settingsWindow) {
         return;
     }
@@ -53,22 +57,25 @@ ipc.on('open-settings-window', function () {
         frame: false,
         height: 200,
         resizable: false,
-        width: 200
+        width: 200,
+        webPreferences: {
+            nodeIntegration: true
+        }
     });
 
-    settingsWindow.loadUrl('file://' + __dirname + '/app/settings.html');
+    settingsWindow.loadFile('./app/settings.html');
 
     settingsWindow.on('closed', function () {
         settingsWindow = null;
     });
 });
 
-ipc.on('close-settings-window', function () {
+ipcMain.on('close-settings-window', function () {
     if (settingsWindow) {
         settingsWindow.close();
     }
 });
 
-ipc.on('set-global-shortcuts', function () {
+ipcMain.on('set-global-shortcuts', function () {
     setGlobalShortcuts();
 });
